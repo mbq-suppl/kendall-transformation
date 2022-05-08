@@ -21,7 +21,8 @@ rho2mi<-function(rho)
  -log(sqrt(1-rho^2))
 
 doOne<-function(cor=0.5,n=15,seed=round(17+1000*cor+n),tries=10){
- message("cor=",cor," n=",n)
+ #Simulations for interesting values of n
+ message("Calculating for cor=",cor," n=",n)
  cor->cor
  n->n
  seed->seed
@@ -54,17 +55,57 @@ doOne<-function(cor=0.5,n=15,seed=round(17+1000*cor+n),tries=10){
  ans
 }
 
+doTheoryOne<-function(cor=0.5){
+ res<-list()
+ 
+ if(cor>0){
+  #For these methods, there is no analytical solution for bivariate
+  # normal distribution, hence we use simulation with N=5000
+  set.seed(1)
+  makeCor(cor,5000)->s
+  cor(s$x,s$y,method="kendall")->tau
+  tau2mi(tau)->res$`Kendall trans.`
+  miScores(data.frame(x=cut(s$x,3)),cut(s$y,3))->res$`Three bins`
+  miScores(data.frame(x=cut(s$x,5)),cut(s$y,5))->res$`Five bins`
+ }else{
+  #Independence
+  0->res$`Kendall trans.`
+  0->res$`Three bins`
+  0->res$`Five bins`
+ }
+
+ #These methods shall yield differential entropy solution
+ rho2mi(cor)->res$`Pearson cor.`
+ rho2mi(cor)->res$`KSG`
+ rho2mi(cor)->res$`LNC`
+
+ data.frame(
+  Method=names(res),
+  MI=sapply(res,head,1),
+  Correlation=cor
+ )
+ 
+}
+
 logsc<-function(from,to,len=10) round(exp(seq(log(from),log(to),len=len)))
 
 doAll<-function(cor=c(0,.5,.9,.99),n=logsc(10,200,len=40),tries=100)
  do.call(rbind,mapply(doOne,cor=rep(cor,each=length(n)),n=rep(n,times=length(cor)),tries=tries,SIMPLIFY=FALSE))
 
-plotAll<-function(Q){
+doTheoryAll<-function(Q)
+ do.call(rbind,lapply(unique(Q$Correlation),doTheoryOne))
+
+
+plotAll<-function(Q,Qt){
  Q$Method<-factor(Q$Method,levels=c("Three bins","Five bins","Kendall trans.","Pearson cor.","KSG","LNC"))
  Q$Correlation<-sprintf("r=%s",Q$Correlation)
+ Qt$Method<-factor(Qt$Method,levels=c("Three bins","Five bins","Kendall trans.","Pearson cor.","KSG","LNC"))
+ Qt$Correlation<-sprintf("r=%s",Qt$Correlation)
+ 
  ggplot(Q,aes(x=Samples,y=MI))+
   geom_ribbon(col="black",fill="gray90",size=0.1,aes(ymin=mn2,ymax=mx2))+
   geom_ribbon(col="black",size=0.1,fill="gray50",aes(ymin=mn,ymax=mx))+
+  geom_hline(aes(yintercept=MI),col="red",data=Qt,size=0.2)+
   geom_line()+
   ylab("Mutual information [nats]")+
   facet_grid(Method~Correlation,scales="free")+scale_x_log10()
@@ -72,7 +113,8 @@ plotAll<-function(Q){
 
 makeFigure<-function(){
  doAll()->Q
- ggsave("fig-biv.pdf",width=8,height=7,plot=plotAll(Q))
+ doTheoryAll(Q)->Qt
+ ggsave("fig-biv.pdf",width=8,height=7,plot=plotAll(Q,Qt))
 }
 
 if(!interactive()) makeFigure()
