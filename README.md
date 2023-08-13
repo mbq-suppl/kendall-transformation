@@ -1,6 +1,6 @@
 # Kendall transformation — computational experiments
 
-This repository contains the code used to generate figures and table in the paper [*Kendall transformation: a robust representation of continuous data for  information theory*](https://arxiv.org/abs/2006.15991) by [Miron B. Kursa](https://orcid.org/0000-0001-7672-648X).
+This repository contains the code used to generate figures and table in the paper [*Kendall transformation: a robust representation of continuous data for  information theory*](https://doi.org/10.1038/s41598-022-12224-2) Sci Rep 12, 8341 (2022) by [Miron B. Kursa](https://orcid.org/0000-0001-7672-648X).
 
 For a reference implementation of Kendall transformation, consider the [praznik](https://CRAN.R-project.org/package=praznik) R package.
 
